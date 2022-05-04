@@ -29,9 +29,7 @@ player addMagazine "HandGrenade_stone";
 				_magIndex = _playerMags findIf { _acceptedMags find (_x # 0) > -1 };
 				if (_magIndex > -1) then {
 					player setVariable ["DE_THROWN_MAG",_playerMags # _magIndex];
-					//systemChat str (_playerMags # _magIndex);
 					player forceWeaponFire ["HandGrenade_Stone","HandGrenade_Stone"];
-					//player removeMagazines "HandGrenade_Stone";
 					player addMagazine "HandGrenade_stone";
 				} else {
 					systemChat "You do not have an extra magazine for this weapon";
@@ -52,9 +50,6 @@ player addMagazine "HandGrenade_stone";
 //["B Alpha 1-1:1 (DreadedEntity)", "Throw", "HandGrenade_Stone", "HandGrenade_Stone", "GrenadeHand_stone", "HandGrenade_Stone", "1779995: handgrenade.p3d"];
 player addEventHandler ["Fired", {
 	params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
-	//_unit = _this select 0; _projectile = _this select 6;
-	//systemChat str _this;
-	//copyToClipboard str _this;
 	if (_weapon == "Throw") then {
 		if (_muzzle == "HandGrenade_Stone") then {
 			private _thrownMag = player getVariable "DE_THROWN_MAG";
@@ -75,44 +70,30 @@ player addEventHandler ["Fired", {
 					_thrownMag = _thisArgs # 1;
 					_near = (_mag nearEntities ["Man", 3]) select { _x != player };
 					_manIndex = _near findIf { isNull objectParent _x }; //only throw to soldiers on foot :)
-					//hintSilent str [_near, _manIndex];
 					if (_manIndex > -1) then {
 						private _unit = _near # _manIndex;
 						private _mass = getNumber (configFile >> "CfgMagazines" >> _thrownMag # 0 >> "mass");
-						//hintSilent str [_unit, _mass];
-						if ((loadAbs _unit) + _mass <= maxLoad _unit) then { //could cause issue? uniform/vest/backpack not checked if there's actually enough space
-							deleteVehicle _mag;
-							_unit addMagazine [_thrownMag # 0, _thrownMag # 1];
-							removeMissionEventHandler [_thisEvent, _thisEventHandler];
-							systemChat "Event Handler removed";
+						if ((loadAbs _unit) + _mass <= maxLoad _unit) then {
+							{
+								if (_x != objNull) then {
+									systemChat format ["loadAbs: %1    mass: %2    maxLoad: %3", loadAbs _x, _mass, maxLoad _x];
+									if ((loadAbs _x) + _mass <= maxLoad _x) then {
+										deleteVehicle _mag;
+										_unit addMagazine [_thrownMag # 0, _thrownMag # 1];
+										removeMissionEventHandler [_thisEvent, _thisEventHandler];
+										break;
+									};
+								};
+							} forEach [uniformContainer _unit, vestContainer _unit, backpackContainer _unit];
 						};
 					};
-					//systemChat str (speed _mag);
 					if (speed _mag == 0) then {
 						_mag setPosATL (ASLToATL (getPosASL _mag));
 						removeMissionEventHandler [_thisEvent, _thisEventHandler];
-						systemChat "Event Handler removed";
 					};
 				}, [_mag, _thrownMag]];
-				systemChat format ["Event Handler %1 added", _id];
 			};
 		};
-
-		//	_num = missionNamespace getVariable ["DE_var_throwEvents", 0]; _event = "DE_throwEvent_" + (str DE_var_throwEvents);
-		//	[_event, "onEachFrame", {
-		//		_near = (nearestObjects [_this select 1, ["MAN"], 3]) - [player];
-		//		if (count _near > 0) then {
-		//			[_this select 0, "onEachFrame"] call BIS_fnc_removeStackedEventHandler;
-		//			deleteVehicle (_this select 1);
-		//			_magInfo = (_this select 1) getVariable "DE_var_magInfo";
-		//			(_near select 0) addMagazine [_magInfo select 0, _magInfo select 1];
-		//		};
-		//		if (speed (_this select 1) == 0) then {
-		//			[_this select 0, "onEachFrame"] call BIS_fnc_removeStackedEventHandler;
-		//		};
-		//	}, [_event, _obj, DE_var_throwMag]] call BIS_fnc_addStackedEventHandler;
-		//	DE_var_throwEvents = (missionNamespace getVariable ["DE_var_throwEvents", 0]) + 1; DE_var_throwMag = "";
-		//};
 	};
 }];
 
