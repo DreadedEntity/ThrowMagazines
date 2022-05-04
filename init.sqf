@@ -61,14 +61,14 @@ player addEventHandler ["Fired", {
 				deleteVehicle _projectile;
 				_mag = createVehicle ["WeaponHolderSimulated", ASLToAGL _pos, [], 0, "CAN_COLLIDE"];
 				_mag addMagazineAmmoCargo [_thrownMag # 0, 1, _thrownMag # 1];
-				player removeMagazine (_thrownMag # 0);
+				player removeMagazineGlobal (_thrownMag # 0);
 				_mag setVelocity _vel;
 
 				_id = addMissionEventHandler ["EachFrame", {
 					private ["_mag","_thrownMag","_near","_manIndex"];
 					_mag = _thisArgs # 0;
 					_thrownMag = _thisArgs # 1;
-					_near = (_mag nearEntities ["Man", 3]) select { _x != player };
+					_near = (_mag nearEntities ["Man", 1]) select { _x != player };
 					_manIndex = _near findIf { isNull objectParent _x }; //only throw to soldiers on foot :)
 					if (_manIndex > -1) then {
 						private _unit = _near # _manIndex;
@@ -76,7 +76,6 @@ player addEventHandler ["Fired", {
 						if ((loadAbs _unit) + _mass <= maxLoad _unit) then {
 							{
 								if (_x != objNull) then {
-									systemChat format ["loadAbs: %1    mass: %2    maxLoad: %3", loadAbs _x, _mass, maxLoad _x];
 									if ((loadAbs _x) + _mass <= maxLoad _x) then {
 										deleteVehicle _mag;
 										_unit addMagazine [_thrownMag # 0, _thrownMag # 1];
