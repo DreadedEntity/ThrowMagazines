@@ -5,8 +5,6 @@
 
 sleep 0.1;
 
-player switchCamera "External";
-
 //[] spawn {
 //	while {true} do {
 //		hintSilent str (player weaponState "HandGrenade_Stone");
@@ -68,7 +66,7 @@ player addEventHandler ["Fired", {
 					private ["_mag","_thrownMag","_near","_manIndex"];
 					_mag = _thisArgs # 0;
 					_thrownMag = _thisArgs # 1;
-					_near = (_mag nearEntities ["Man", 1]) select { _x != player };
+					_near = (_mag nearEntities ["Man", 3]) select { _x != player };
 					_manIndex = _near findIf { isNull objectParent _x }; //only throw to soldiers on foot :)
 					if (_manIndex > -1) then {
 						private _unit = _near # _manIndex;
@@ -96,10 +94,33 @@ player addEventHandler ["Fired", {
 	};
 }];
 
+player switchCamera "External";
+
 player addAction ["Switch to cursorTarget", {
 	selectPlayer cursorTarget;
+	player switchCamera "External";
 }, [], 6, false, true, "", "_target != player"];
 
 man addAction ["Switch to cursorTarget", {
 	selectPlayer cursorTarget;
+	player switchCamera "External";
 }, [], 6, false, true, "", "_target != player"];
+{ man removeMagazine _x } forEach magazines man;
+removeAllItems man;
+removeAllItems player;
+
+spawnServerUnitRelativeInput = {
+	_man = (createGroup west) createUnit ["B_Soldier_F", _this getRelPos [8,0], [], 0, "CAN_COLLIDE"];
+	{ _man removeMagazine _x } forEach magazines _man;
+	
+	_relativeDir = _man getDir _this;
+	_man setDir _relativeDir;
+	(group _man) setFormDir _relativeDir;
+	[_man, ["Check magazines", { hintSilent str (magazines (_this # 3)) }, _man, 1, false, true]] remoteExec ["addAction", 0];
+	[_man, ["Check unit locality", { hintSilent format ["Unit is local: %1", local (_this # 3)] }, _man, 1, false, true]] remoteExec ["addAction", 0];
+};
+
+player addAction ["Create server-local unit", {
+	//Unit should be local to server due to being AI
+	[player, spawnServerUnitRelativeInput] remoteExec ["call", 2];
+}, nil, 2, false, true];
