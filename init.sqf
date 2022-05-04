@@ -17,33 +17,23 @@ player addMagazine "HandGrenade_stone";
 //keydown UI EH - Adds another hotkey to the main "game" display to get the keypress
 //note 35 == "H" key
 (findDisplay 46) displayAddEventHandler ["KeyDown", {
-	if (()player weaponState "HandGrenade_Stone") # 6 == 0) then {
-		if ((_this select 1) == 35) then {
-			DE_var_throwPressed = true;
-			_magName = "";
-			_magName = {
-				_find = (getArray (configFile >> "cfgWeapons" >> currentWeapon player >> "magazines")) find _x;
-				if (_find > -1) exitWith {_x};
-			} count ((backpackItems player) + (vestItems player) + (uniformItems player));
-
-			if (typeName _magName == "STRING" && {_magName != ""}) then {
-				DE_var_throwMag = _magName;
-				player addMagazine "HandGrenade_stone";
-				player setWeaponReloadingTime [player, "HandGrenade_Stone", 0]; //this doesn't work, it would be the key to solving all of my headaches with this code
+	if ((_this select 1) == 35) then {
+		if ((player weaponState "HandGrenade_Stone") # 6 == 0) then {
+			_acceptedMags = getArray (configFile >> "cfgWeapons" >> currentWeapon player >> "magazines");
+			_playerMags = magazinesAmmo player;
+			_magIndex = _playerMags findIf { _acceptedMags find (_x # 0) > -1 };
+			if (_magIndex > -1) then {
+				player setVariable ["DE_THROWN_MAG",_playermags # _magIndex];
 				player forceWeaponFire ["HandGrenade_Stone","HandGrenade_Stone"];
+				//player removeMagazines "HandGrenade_Stone";
+				player addMagazine "HandGrenade_stone";
 			} else {
-				hint "You do not have an extra magazine for this weapon";
-			}
+				systemChat "You do not have an extra magazine for this weapon";
+			};
 		};
 	};
 }];
 
-//keyup UI EH - Creates a switch. Prevents the keydown code from spamming if the player holds the key down
-(findDisplay 46) displayAddEventHandler ["KeyUp", {
-	if ((_this select 1) == 35) then {
-		DE_var_throwPressed = false;
-	};
-}];
 
 //fired EH - Does all the cool stuff
 player addEventHandler ["Fired", {
